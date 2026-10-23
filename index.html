@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sekulan RBT POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">SR</div>
+        <div><strong>Sekulan RBT</strong><span>Point of Sale</span></div>
+      </div>
+      <nav>
+        <button class="nav-item active" data-view="pos"><span>▦</span> Kasir</button>
+        <button class="nav-item" data-view="inventory"><span>◫</span> Persediaan</button>
+        <button class="nav-item" data-view="orders"><span>☰</span> Pesanan</button>
+        <button class="nav-item" data-view="reports"><span>⌁</span> Laporan</button>
+        <button class="nav-item" data-view="admin"><span>⚙</span> Admin</button>
+      </nav>
+      <div class="outlet-card">
+        <span class="eyebrow">OUTLET AKTIF</span>
+        <strong>Sekulan RBT 519A</strong>
+        <span>Kasir hanya dapat mengakses outlet ini.</span>
+      </div>
+      <div class="profile"><div class="avatar">AS</div><div><strong>Ayu Setiani</strong><span>Kasir • Shift pagi</span></div><button id="logoutButton" aria-label="Keluar" title="Logout">↗</button></div>
+    </aside>
+
+    <main>
+      <section id="pos" class="view active">
+        <header class="topbar">
+          <div><p class="eyebrow">MINGGU, 20 SEPTEMBER 2026</p><h1>Selamat pagi, Ayu</h1><span class="shift-badge hidden" id="shiftBadge"></span></div>
+          <div class="top-actions"><button class="btn ghost" id="closeShift">Tutup shift</button><button class="btn primary" id="newOrder">+ Pesanan baru</button></div>
+        </header>
+
+        <div class="pos-layout">
+          <section class="menu-pane">
+            <div class="search-row">
+              <label class="search"><span>⌕</span><input id="menuSearch" placeholder="Cari menu atau harga..." /><button type="button" class="search-clear hidden" id="clearSearch" aria-label="Hapus pencarian">×</button></label>
+              <button class="btn add-menu" id="addMenu">＋ Tambah menu</button>
+            </div>
+            <div class="category-tabs" id="categoryTabs"></div>
+            <div class="section-heading"><div><h2 id="categoryTitle">Menu paket</h2><p id="itemCount"></p></div><button class="icon-btn">⋮</button></div>
+            <div class="menu-grid" id="menuGrid"></div>
+          </section>
+
+          <aside class="cart-pane">
+            <div class="cart-head"><div><p class="eyebrow">PESANAN</p><h2 id="cartOrderNo">#RBT-0920-087</h2></div><span class="status" id="cartStatus">Makan di tempat</span></div>
+            <div class="customer-row"><span>◎</span><div id="customerInfo"><small>Pelanggan</small><strong>Umum</strong></div><button id="changeCustomer">Ubah</button></div>
+            <div class="cart-list" id="cartList"></div>
+            <button class="add-note" id="addFee">＋ Tambahkan fee driver</button>
+            <div class="totals">
+              <div><span>Subtotal</span><strong id="subtotal">Rp0</strong></div>
+              <div id="feeLine" class="hidden"><span id="feeLineLabel">Fee driver</span><strong id="feeTotal">-Rp0</strong></div>
+              <div id="paidLine" class="hidden"><span>Dibayar</span><strong id="paidTotal">-Rp0</strong></div>
+              <div class="grand-total"><span id="grandLabel">Total pembayaran</span><strong id="grandTotal">Rp0</strong></div>
+            </div>
+            <button class="pay-button" id="payButton"><span>Bayar sekarang</span><strong id="payAmount">Rp0</strong></button>
+            <p class="stock-note">Stok barang dagangan akan terpotong otomatis setelah pembayaran.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="inventory" class="view">
+        <header class="topbar"><div><p class="eyebrow">OPERASIONAL OUTLET</p><h1>Persediaan</h1></div><div class="top-actions"><button class="btn ghost" id="productionIssue">− Keluarkan untuk produksi</button><button class="btn primary" id="transferStock">⇄ Transfer antar toko</button></div></header>
+        <div class="summary-grid">
+          <article><span class="metric-icon amber">!</span><div><small>Stok menipis</small><strong id="lowStockCount">6 item</strong></div><span class="trend warn">Perlu restok</span></article>
+          <article><span class="metric-icon green">✓</span><div><small>Bahan baku</small><strong id="rawItemCount">48 item</strong></div><span class="trend">Aktif</span></article>
+          <article><span class="metric-icon blue">↗</span><div><small>Transfer hari ini</small><strong>3 TAT</strong></div><span class="trend">Tercatat</span></article>
+        </div>
+        <div class="stock-ledger-tabs"><button class="active" data-stock="raw">LPP bahan baku</button><button data-stock="finished">LPP barang dagangan</button><span>Dua buku stok dicatat terpisah</span></div>
+        <div class="inventory-grid">
+          <article class="panel"><div class="panel-head"><div><h2 id="stockTitle">Stok bahan baku</h2><p id="stockSubtitle">Masuk, pemakaian produksi, dan transfer.</p></div><button class="btn ghost" id="stockIn">+ Stok masuk</button></div><div id="rawTable"></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Riwayat TAT</h2><p>Transfer antar toko terbaru.</p></div><button class="text-btn">Lihat semua</button></div><div class="timeline" id="tatList"></div></article>
+        </div>
+        <article class="panel" id="requestPanel">
+          <div class="panel-head"><div><h2>Permintaan barang</h2><p id="requestCount">Pengajuan bahan baku, persetujuan, PO, dan penerimaan.</p></div><button class="btn primary" id="addRequest">+ Buat permintaan</button></div>
+          <div class="order-toolbar"><div class="order-chips" id="requestStatusFilter"><button class="active" data-status="Semua">Semua</button><button data-status="Menunggu persetujuan">Menunggu persetujuan</button><button data-status="Disetujui">Disetujui</button><button data-status="PO dicetak">PO dicetak</button><button data-status="Selesai">Selesai</button><button data-status="Ditolak">Ditolak</button></div><label class="search"><span>⌕</span><input id="requestSearch" placeholder="Cari no. permintaan atau peminta..." /></label></div>
+          <div class="table-scroll" id="requestTable"></div>
+        </article>
+        <div id="requestFormPanel" class="hidden">
+          <article class="panel">
+            <div class="panel-head"><div><h2>Pilih bahan baku</h2><p>Item menipis tampil paling atas dan sudah tercentang. Isi qty yang diminta untuk setiap item yang dicentang.</p></div></div>
+            <div class="order-info req-info"><label>Outlet<span id="rfOutletWrap"></span></label><label>Catatan<input id="rfNote" placeholder="Mis. untuk produksi akhir pekan" /></label></div>
+            <div class="order-toolbar"><div class="order-chips" id="rfStatusFilter"><button class="active" data-status="Semua">Semua</button><button data-status="Menipis">Menipis</button><button data-status="Aman">Aman</button></div><label class="search"><span>⌕</span><input id="rfSearch" placeholder="Cari nama bahan baku..." /></label></div>
+            <div class="table-scroll" id="rfTable"></div>
+            <div class="req-form-foot"><strong id="rfSummary"></strong><div class="modal-actions"><button class="btn ghost" id="rfCancel">Batal</button><button class="btn primary" id="rfSubmit">Ajukan permintaan</button></div></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="orders" class="view">
+        <header class="topbar"><div><p class="eyebrow">PESANAN TERJADWAL</p><h1 id="ordersTitle">Pesanan</h1></div><div class="top-actions"><button class="btn primary" id="addOrder">+ Buat order</button></div></header>
+        <div id="orderListPanel">
+          <div class="order-toolbar"><div class="order-chips" id="orderStatusFilter"><button class="active" data-status="Semua">Semua</button><button data-status="Open">Open</button><button data-status="Selesai">Selesai</button></div><select id="orderOutletFilter"></select><label class="search"><span>⌕</span><input id="orderSearch" placeholder="Cari no. order atau pelanggan..." /></label></div>
+          <article class="panel"><div class="panel-head"><div><h2>Daftar order</h2><p id="orderCount"></p></div></div><div class="table-scroll" id="orderTable"></div></article>
+        </div>
+        <div id="orderFormPanel" class="hidden">
+          <div class="pos-layout order-form">
+            <section class="menu-pane">
+              <p class="form-step">1. Informasi order</p>
+              <div class="order-info">
+                <label>Outlet<span id="ofOutletWrap"></span></label>
+                <label>Nama pelanggan<input id="ofCustomer" placeholder="Nama pelanggan / instansi" /></label>
+                <label>No. HP<input id="ofPhone" placeholder="08xx-xxxx-xxxx" /></label>
+                <label>Estimasi tanggal<input id="ofDate" type="date" /></label>
+                <label>Estimasi jam<input id="ofTime" type="time" /></label>
+                <label>Catatan<input id="ofNote" placeholder="Mis. antar ke kantor lt.3" /></label>
+              </div>
+              <p class="form-step">2. Pilih item <small>Semua menu tampil tanpa melihat stok</small></p>
+              <div class="search-row"><label class="search"><span>⌕</span><input id="ofSearch" placeholder="Cari menu atau harga..." /></label></div>
+              <div class="category-tabs" id="ofTabs"></div>
+              <div class="menu-grid of-grid" id="ofGrid"></div>
+            </section>
+            <aside class="cart-pane order-summary">
+              <div class="cart-head"><div><p class="eyebrow">RINGKASAN ORDER</p><h2 id="ofId">ORD-0920-005</h2></div></div>
+              <div class="of-scroll">
+                <div class="cart-list" id="ofItems"></div>
+                <div class="totals"><div class="grand-total"><span>Subtotal</span><strong id="ofSubtotal">Rp0</strong></div></div>
+                <p class="form-step">3. Pembayaran awal</p>
+                <div class="of-options"><label class="check-row"><input type="radio" name="ofPay" value="none" checked /> Belum bayar</label><label class="check-row"><input type="radio" name="ofPay" value="partial" /> Sebagian</label><label class="check-row"><input type="radio" name="ofPay" value="full" /> Lunas</label></div>
+                <div id="ofPayFields" class="of-fields hidden"><label>Nominal<input id="ofPayAmount" type="number" min="0" /></label><label>Metode<select id="ofPayMethod"><option>Tunai</option><option>QRIS</option><option>Kartu debit</option></select></label></div>
+                <div class="of-rest"><span>Sisa</span><strong id="ofRest">Rp0</strong></div>
+                <p class="form-step">4. Fee driver <small>opsional, biaya keluar</small></p>
+                <label class="check-row"><input type="checkbox" id="ofFeeOn" /> Ada fee driver</label>
+                <div id="ofFeeFields" class="of-fields hidden"><label>Bentuk fee<select id="ofFeeType"><option value="cash">Uang tunai</option><option value="stock">Rokok</option></select></label><label id="ofFeeLabel">Nominal fee<input id="ofFeeValue" type="number" min="0" /></label></div>
+                <p class="form-step">5. Status order</p>
+                <div class="of-options"><label class="check-row"><input type="radio" name="ofStatus" value="Open" checked /> Open – tampil di Kasir</label><label class="check-row"><input type="radio" name="ofStatus" value="Selesai" /> Selesai</label></div>
+                <p class="order-hint hidden" id="ofStatusHint">Stok akan dipotong saat disimpan.</p>
+              </div>
+              <div class="modal-actions"><button class="btn ghost" id="ofCancel">Batal</button><button class="btn primary" id="ofSave">Simpan order</button></div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section id="reports" class="view">
+        <header class="topbar"><div><p class="eyebrow">REGISTER SALES</p><h1>Laporan penjualan</h1></div><div class="top-actions"><div class="period-switch" id="periodSwitch"><button data-period="harian">Harian</button><button class="active" data-period="mingguan">Mingguan</button><button data-period="bulanan">Bulanan</button><button data-period="tahunan">Tahunan</button></div><button class="btn primary" id="exportSales">⇩ Export CSV</button></div></header>
+        <div class="report-filter"><label>Outlet<select id="reportOutlet"><option>Semua outlet</option><option>Sekulan RBT 519A</option><option>RM RBT 519A</option></select></label><label>Shift<select id="reportShift"><option>Semua shift</option><option>Shift 1 • 06.00–14.00</option><option>Shift 2 • 14.00–22.00</option><option>Shift 3 • 22.00–06.00</option></select></label><label>Periode<input type="date" value="2026-09-20"></label></div>
+        <div class="summary-grid report-summary">
+          <article><div><small>Penjualan bersih</small><strong>Rp42.860.000</strong></div><span class="trend positive">↑ 12,4%</span></article>
+          <article><div><small>Jumlah transaksi</small><strong>1.284</strong></div><span class="trend positive">↑ 8,1%</span></article>
+          <article><div><small>Rata-rata struk</small><strong>Rp33.380</strong></div><span class="trend">Stabil</span></article>
+          <article><div><small>Pembatalan</small><strong>7</strong></div><span class="trend warn">Perlu tinjau</span></article>
+        </div>
+        <div class="report-grid">
+          <article class="panel chart-card"><div class="panel-head"><div><h2>Tren penjualan</h2><p>14–20 September 2026</p></div><strong>Rp42,86 jt</strong></div><div class="chart" id="salesChart"></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Menu terlaris</h2><p>Berdasarkan jumlah terjual</p></div></div><div id="topItems"></div></article>
+        </div>
+        <article class="panel detail-panel"><div class="panel-head"><div><h2>Detail register sales</h2><p id="reportCaption">Rekap mingguan per outlet dan shift</p></div><button class="text-btn" id="printReport">Cetak laporan</button></div><div class="table-scroll" id="salesDetail"></div></article>
+        <article class="panel detail-panel"><div class="panel-head"><div><h2>Histori pembatalan</h2><p>Semua cancel tercatat tanpa kata sandi dan masuk BA shift.</p></div><span class="status alert">7 perlu tinjau</span></div><div class="table-scroll" id="cancelHistory"></div></article>
+      </section>
+
+      <section id="admin" class="view">
+        <header class="topbar"><div><p class="eyebrow">PUSAT KONTROL</p><h1>Administrasi</h1></div><button class="btn primary" id="addUser">+ Tambah pengguna</button></header>
+        <div class="admin-tabs" id="adminTabs"><button class="active" data-admin="users">Shift & pengguna</button><button data-admin="outlets">Outlet</button><button data-admin="menus">Master menu</button><button data-admin="logins">Master login</button><button data-admin="access">Hak akses</button><button data-admin="notifications">Notifikasi owner</button></div>
+        <div id="adminUsers" class="admin-content active"><div class="summary-grid">
+          <article><span class="metric-icon green">3</span><div><small>Shift aktif</small><strong>3 shift</strong></div><span class="trend">24 jam</span></article>
+          <article><span class="metric-icon blue">8</span><div><small>Outlet terdaftar</small><strong>8 outlet</strong></div><span class="trend">Aktif</span></article>
+          <article><span class="metric-icon amber">!</span><div><small>BA menunggu owner</small><strong>2 dokumen</strong></div><span class="trend warn">Tinjau</span></article>
+        </div>
+        <div class="admin-grid">
+          <article class="panel"><div class="panel-head"><div><h2>Pengaturan 3 shift</h2><p>Kepala Toko wajib menyelesaikan berita acara sebelum shift ditutup.</p></div><button class="btn ghost" id="editShifts">Ubah jadwal</button></div><div id="shiftCards"></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Pengguna & akses outlet</h2><p>Kasir dibatasi pada outlet sesuai login.</p></div></div><div id="userList"></div></article>
+        </div>
+        <article class="panel detail-panel"><div class="panel-head"><div><h2>Berita acara tutup shift</h2><p>Ringkasan selisih kas dan pembatalan untuk pemberitahuan owner.</p></div><button class="text-btn">Lihat arsip</button></div><div class="table-scroll" id="baTable"></div></article></div>
+        <div id="adminOutlets" class="admin-content"><article class="panel"><div class="panel-head"><div><h2>Informasi outlet</h2><p>Data identitas outlet yang digunakan pada login ini.</p></div><button class="btn primary" id="addOutlet">Edit informasi outlet</button></div><div class="outlet-grid single" id="outletGrid"></div></article></div>
+        <div id="adminMenus" class="admin-content"><article class="panel"><div class="panel-head"><div><h2>Master menu</h2><p>Kelola kategori, harga jual, stok, dan resep produksi.</p></div><button class="btn primary" id="adminAddMenu">+ Tambah menu</button></div><div class="table-scroll" id="masterMenuTable"></div></article></div>
+        <div id="adminLogins" class="admin-content"><article class="panel"><div class="panel-head"><div><h2>Master login</h2><p>Kelola akun, peran, outlet, shift, dan status akses.</p></div><button class="btn primary" id="addLogin">+ Tambah login</button></div><div class="table-scroll" id="masterLoginTable"></div></article></div>
+        <div id="adminAccess" class="admin-content"><article class="panel empty-admin"><h2>Hak akses</h2><p>Kasir hanya mengakses menu Kasir untuk transaksi penjualan di outlet serta shift sesuai login, termasuk memproses order Open outletnya (menambah item dan menerima pembayaran). Kepala Toko mengakses Persediaan, Pesanan (hanya outletnya), Laporan, dan Admin terbatas (shift &amp; pengguna, outlet), serta mengotorisasi tutup shift dan pembatalan item order untuk shift yang dipimpinnya. Administrator mengakses Persediaan, Pesanan, Laporan, dan seluruh Admin untuk semua outlet.</p></article></div>
+        <div id="adminNotifications" class="admin-content"><article class="panel empty-admin"><h2>Notifikasi owner</h2><p>Peringatan cancel, BA tutup shift, stok minimum, dan transfer antar toko dikirim melalui pusat notifikasi ini.</p></article></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modalContent"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div id="poPrint"></div>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-visual"><div class="login-brand">SR</div><p>SEKULAN RBT</p><h1>Operasional restoran dalam satu sistem.</h1><span>Penjualan, stok, produksi, dan laporan antar-outlet yang saling terhubung.</span></div>
+    <form class="login-card" id="loginForm"><p class="eyebrow">SELAMAT DATANG</p><h2>Masuk ke sistem</h2><p>Pilih peran demo atau masukkan akun Anda.</p><div class="role-switch"><button type="button" class="active" data-role="cashier">Kasir</button><button type="button" data-role="kepala">Kepala Toko</button><button type="button" data-role="admin">Administrator</button></div><label>Nama pengguna<input id="loginUser" value="ayu.kasir" autocomplete="username"></label><label>Kata sandi<div class="password-field"><input id="loginPass" type="password" value="demo123" autocomplete="current-password"><button type="button" id="togglePassword">Lihat</button></div></label><button type="submit" class="btn primary login-submit">Masuk</button><small>Akun demo terisi otomatis saat memilih peran.</small></form>
+  </div>
+  <div class="login-screen shift-screen closed" id="shiftScreen">
+    <div class="login-visual"><div class="login-brand">SR</div><p>MULAI SHIFT</p><h1>Siapkan shift sebelum melayani.</h1><span>Catat modal awal kas dan cek kesiapan perangkat. Kepala Toko akan memverifikasi pembukaan shift beserta catatan serah terima.</span></div>
+    <div class="login-card opening-card"><p class="eyebrow">MULAI SHIFT</p><h2 id="shiftTitle">Shift 1</h2><div class="shift-identity" id="shiftIdentity"></div><label>Modal awal kas (Rp)<input id="openingCash" type="number" min="0" placeholder="0"></label><p class="shift-section">Checklist kesiapan</p><label class="check-row"><input type="checkbox"> Printer struk siap</label><label class="check-row"><input type="checkbox"> Mesin EDC menyala</label><label class="check-row"><input type="checkbox"> QRIS aktif</label><div class="modal-actions"><button type="button" class="btn ghost" id="shiftLogout">Keluar</button><button type="button" class="btn primary" id="startShift">Mulai shift</button></div></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

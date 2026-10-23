@@ -1,0 +1,133 @@
+schema: superpowers-bridge
+
+# Konteks proyek: hal-hal yang harus dipegang setiap artefak OpenSpec
+# (proposal, design, specs, tasks) dan tidak selalu terlihat dari kode.
+context: |
+  ## Bahasa
+  - Tulis semua artefak OpenSpec (proposal, design, specs, tasks) dalam Bahasa Indonesia.
+    Nama file, ID, nama fungsi/variabel, dan potongan kode tetap seperti di kode (Inggris).
+  - Semua teks UI berbahasa Indonesia. Mata uang Rupiah, diformat dengan
+    toLocaleString('id-ID') lewat helper `rupiah` (app.js) atau `rp` (outlet-data.js).
+
+  ## Sifat proyek
+  - Ini PROTOTIPE UI statis yang bisa diklik, bukan aplikasi produksi.
+    Tidak ada backend, build step, package manager, linter, maupun test suite.
+  - Semua data adalah array hard-coded di memori. Aksi hanya mengubah array lalu
+    menampilkan toast. Tidak ada persistensi; reload = state kembali awal.
+  - Jangan mengusulkan framework, bundler, TypeScript, npm dependency, backend,
+    database, atau localStorage kecuali perubahan secara eksplisit memintanya.
+    Integrasi nyata (SFTP, notifikasi owner, printer, pembayaran QRIS) cukup
+    disimulasikan (toast, setTimeout, modal), bukan diimplementasikan.
+  - Hanya boleh memuat resource eksternal yang sudah dipakai (Google Fonts DM Sans + Fraunces).
+
+  Yang PERLU diperhatikan:
+  - Tampilan sesuai desain dan konsisten antar halaman
+  - Alur navigasi dan interaksi berjalan mulus dari awal sampai akhir
+  - Data contoh (dummy/mock) terlihat realistis
+
+  Yang TIDAK perlu diperhatikan:
+  - Integritas data (nilai data, constraint, rollback)
+  - Validasi data yang ketat
+  - Penanganan konkurensi, race condition, dan edge case data
+  - Optimasi performa dan skalabilitas
+  Gunakan solusi paling sederhana yang membuat tampilan dan flow berjalan.
+
+  ## Dua aplikasi terpisah (tidak berbagi JS maupun state)
+  1. POS outlet: index.html + app.js + styles.css
+     - Kasir: kategori menu (Paket, Premium, Nasi Box, Ala carte, Minuman, Jajanan),
+       keranjang, fee driver, pembayaran (Tunai/QRIS/Kartu debit), cancel item.
+     - Persediaan: dua buku stok terpisah, "LPP bahan baku" (rawStock) dan
+       "LPP barang dagangan" (finishedStock); stok masuk (GRN), produksi, transfer antar toko (TAT).
+     - Laporan: register sales harian/mingguan/bulanan/tahunan, menu terlaris,
+       histori pembatalan, export CSV, cetak.
+     - Admin: shift & pengguna, outlet, master menu, master login, hak akses, notifikasi owner.
+     - Diawali overlay login dengan role switch Kasir / Administrator (body.auth-locked).
+  2. Pusat Data Outlet (kantor pusat): outlet-data.html + outlet-data.js + outlet-data.css
+     (+ outlet-data-extra.css yang disuntikkan oleh baris pertama outlet-data.js).
+     - Halaman: Ringkasan, Data masuk, Riwayat impor, Folder gagal, Outlet, Laporan pusat, Sumber data.
+     - Mengimpor paket ZIP per shift yang diunggah outlet via SFTP:
+       /inbox -> diperiksa/divalidasi -> disetujui/diproses (/processed) atau /failed.
+     - Input manual hanya untuk kondisi darurat dan ditandai untuk audit.
+  Keduanya hanya terhubung oleh tautan dan konsep domain: tutup shift di POS
+  menghasilkan paket data yang kemudian diimpor oleh hub. Satu perubahan harus
+  menyebut dengan jelas aplikasi mana yang disentuh.
+
+  ## Glosarium domain
+  - LPP: Laporan Posisi Persediaan (buku stok). Bahan baku vs barang dagangan.
+  - Produksi (PRD-*): bahan baku dikeluarkan -> nilainya dibukukan sebagai biaya bahan baku
+    -> hasilnya menambah stok barang dagangan. Tidak boleh membuat stok bahan baku minus.
+  - Penjualan: pembayaran yang dikonfirmasi memotong stok barang dagangan otomatis.
+  - Stok masuk (GRN-*): penerimaan dari pemasok, menambah stok dan memperbarui biaya per unit.
+  - TAT-*: Transfer Antar Toko. Transfer tidak boleh membuat stok outlet asal minus.
+  - Fee driver: tunai (mengurangi pendapatan/total) atau rokok (hanya memotong stok).
+  - Cancel (CNL-*): tidak memerlukan kata sandi, wajib alasan, tercatat di histori,
+    memicu peringatan ke owner, dan masuk BA tutup shift.
+  - BA: Berita Acara tutup shift. Leader wajib mengisi catatan dan konfirmasi pemeriksaan
+    sebelum paket data dibuat.
+  - Shift: Shift 1 06.00–14.00, Shift 2 14.00–22.00, Shift 3 22.00–06.00.
+  - Peran: Kasir (hanya outlet & shift sendiri: POS, stok outlet, tutup shift),
+    Leader (memeriksa dan menutup shift), Administrator (semua modul & outlet), Owner (penerima notifikasi/BA).
+  - Kode outlet berformat <nomor><huruf>-<jenis>, misalnya 519A-S, 519A-R, 456B-M, 538B-N.
+  - Paket data shift: RBT_<kodeOutlet>_<YYYYMMDD>_SHIFT<n>_<urutan 6 digit>.zip berisi
+    manifest.json, sales.csv, payments.csv, cancel.csv, stock_movement.csv,
+    production.csv, shift_closing.csv; dikirim ke /inbox/<kodeOutlet>.
+  - Status kiriman di hub: Valid, Perlu validasi (ada selisih kas), Sudah diproses, Diterima;
+    status impor: Berhasil / Gagal (mis. checksum tidak sesuai, manifest.json tidak ditemukan).
+  - Tanggal demo yang dipakai di data: 20–21 September 2026.
+
+  ## Konvensi kode (wajib diikuti)
+  - JS browser biasa tanpa module; semua global dalam satu file. Helper: `$`/`$$`,
+    `showToast` (app.js) / `toast` (outlet-data.js).
+  - Render dengan menetapkan template literal ke innerHTML, lalu pasang handler dengan
+    `.onclick =` / `.oninput =` / `.onchange =`. Jangan pakai addEventListener untuk elemen
+    yang di-render ulang.
+  - Navigasi lewat class `active`: index.html memakai .nav-item[data-view] -> section.view;
+    outlet-data.html memakai aside nav button[data-page] -> section.hub-page via switchPage()
+    (judul & eyebrow halaman baru wajib ditambahkan ke map `titles`).
+  - Modal: openModal(html)/closeModal() di app.js; drawer: #drawer + closeDrawer() di
+    outlet-data.js. Tombol penutup diberi [data-close] atau .drawer-close.
+  - Tabel di app.js dibuat dengan helper tableHtml(headers, rows); header tabel ditulis KAPITAL.
+  - Pertahankan kepadatan kode (sering satu baris per fungsi), terutama di outlet-data.js
+    dan outlet-data.html.
+  - Beberapa record berupa array posisional (mis. submissions[i][7] = status,
+    [8] = nama file; cancelLog, salesRows, importHistory, failedPackages). Cek header
+    tabel yang me-render-nya sebelum mengindeks; tambah kolom di AKHIR array agar indeks lama aman.
+  - Format ID dokumen mengikuti pola yang ada: <PREFIX>-<MMDD>-<urutan>, mis. CNL-0920-007,
+    TAT-0920-004, BA-0920-S1, IN-0921-021.
+
+  ## Jebakan: app.js berlapis
+  - app.js dibangun dengan menambahkan section baru di bawah yang lama.
+    renderInventory, renderReports, dan openCancel dideklarasikan DUA kali (yang terakhir menang),
+    dan section akhir menimpa .onclick yang sudah dipasang sebelumnya (mis. #closeShift,
+    #payButton, #stockIn, #menuSearch).
+  - Ada nama global yang sama di kedua aplikasi (mis. `outlets`, `renderOutlets`) dengan
+    bentuk data berbeda; jangan menyamakan keduanya.
+
+rules:
+  proposal:
+    - Sebutkan aplikasi yang terdampak (POS index.html, Pusat Data outlet-data.html, atau keduanya) dan file yang akan diubah.
+    - Nyatakan secara eksplisit apa yang di luar cakupan, terutama backend/persistensi/integrasi nyata.
+    - Jika perubahan menyentuh alur tutup shift atau format paket ZIP, jelaskan dampaknya pada sisi POS dan sisi hub.
+  design:
+    - Tetap dalam batas prototipe statis; data contoh baru ditulis sebagai array hard-coded di file JS yang sesuai.
+    - Untuk perubahan di app.js, sebutkan definisi/penugasan handler TERAKHIR yang akan diubah, dan apakah salinan lama yang mati akan dihapus.
+    - Jika menambah kolom ke record array posisional, tuliskan indeks barunya dan semua tabel/fungsi yang membacanya.
+    - Gunakan pola UI yang sudah ada (modal, drawer, tableHtml, status pill, summary-grid/metric-grid, toast) sebelum membuat komponen baru.
+  specs:
+    - Tulis requirement dari sudut pandang peran (Kasir, Leader, Administrator, Owner, Admin pusat).
+    - Skenario memakai teks UI dan pesan toast berbahasa Indonesia persis seperti yang akan tampil.
+    - Sertakan aturan validasi bisnis (stok tidak boleh minus, field wajib, konfirmasi leader) sebagai skenario tersendiri.
+  tasks:
+    - Tidak ada test otomatis; setiap kelompok tugas diakhiri langkah verifikasi manual di browser (buka index.html / outlet-data.html, klik alur, cek toast & tabel).
+    - Jangan membuat tugas untuk instalasi dependency, build, lint, atau unit test.
+    - Kelompokkan tugas per file (HTML, JS, CSS) dan per aplikasi.
+
+operations:
+  apply:
+    guidance:
+      - Sebelum mengubah perilaku di app.js, cari semua definisi fungsi dan semua penugasan .onclick/.oninput untuk elemen terkait; ubah yang terakhir atau hapus salinan mati.
+      - Ikuti gaya kode sekitar (padat, template literal + innerHTML, handler via properti on*); jangan memformat ulang file secara massal.
+      - Setelah implementasi, laporkan langkah verifikasi manual yang dilakukan atau perlu dilakukan di browser.
+  archive:
+    guidance:
+      - Ringkas hasil arsip dan perbarui CLAUDE.md bila perubahan menambah halaman, modul, atau konvensi baru.
