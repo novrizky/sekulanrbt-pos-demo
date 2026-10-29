@@ -10,6 +10,19 @@ A static, clickable **UI prototype** for "Sekulan RBT", a multi-outlet restauran
 
 Open `index.html` or `outlet-data.html` directly in a browser, or serve the folder with any static server (for example `npx serve .` or `python -m http.server`). Reloading resets all state.
 
+### Automated checks (headless Chrome)
+
+There is no test suite, but UI flows can still be checked automatically:
+
+1. Copy `index.html` to a git-ignored scratch folder, for example `.superpowers/sdd/<plan>/harness/harness.html`, with `sed`. Rewrite the `styles.css` / `app.js` paths so they point back to the project, then add `<script src="test.js"></script>` after `app.js`.
+2. In `test.js`:
+   - Log in by setting `#loginUser` / `#loginPass` and calling `requestSubmit()` on `#loginForm`. All demo passwords are `demo123`.
+   - Drive the UI with `.click()` and with `dispatchEvent(new Event('input'|'change'))`. Handlers are `on*` properties, so dispatched events trigger them.
+   - Assert exact values (toast text in `#toast`, Rupiah strings, document IDs), then write `PASS`/`FAIL` lines into a `<pre id="__results">` appended to `body`.
+3. Run `chrome.exe --headless=new --allow-file-access-from-files --window-size=1440,1000 --dump-dom file:///…/harness.html` and parse the results `<pre>` out of the dumped DOM.
+
+The flows are synchronous, so `--dump-dom` is enough. Do not use Playwright or npm, and never put harness files in the project tree. Top-level `const`/`let` globals in `app.js` (for example `rawStock` or `stockMoves`) can be read directly from `test.js`. Even when the harness passes, recommend one manual click-through in a real browser before a demo.
+
 ## Two independent apps
 
 | Page | Script / styles | Purpose |
@@ -31,6 +44,12 @@ The two pages share no JS and no state. They are connected only by links and by 
 ## Scheduled orders (Pesanan)
 
 Administrator and Kepala Toko create orders in the Pesanan view (`section#orders`). Kepala Toko are limited to their own outlet. Orders live in `scheduledOrders`, an array of objects (not positional) at the end of `app.js`. Payment status is never stored; `orderMoney(o)` derives it from items and payments (Belum bayar, Sebagian, Lunas, Lebih bayar). Driver fee is an expense and does not reduce the bill. Stock is cut only when an order becomes Selesai. In the Kasir view, the "Ubah" button on the customer row sets `activeOrder`, and `renderCart`, `#payButton`, `feeModal` and `openCancel` branch on it. Cart lines loaded from the order carry `saved:true`, and cancelling one needs the current shift's Kepala Toko credentials.
+
+Rokok (Rokok Brand A–E) is a normal `menuData` category whose items have stock rows with exactly the same names. Matching is by name, so a rename must change both places. Those rows, plus `'Air mineral'`, live in `sharedStock` (marked `shared:true`), which is spread into the end of both `rawStock` and `finishedStock`. Both arrays therefore hold the same objects: restocking via "+ Stok masuk" or a PO and cutting via sales or fees change one stock that shows in both LPP tabs with a "Tersambung" badge. Shared items are filtered out of `productionModal`, and the "Stok menipis" card counts them once through a `Set`. Never copy these objects (`{...x}`), or the link breaks. A driver fee is `{type:'cash',value}` or `{type:'stock',items:[{name,qty}]}`. In normal Kasir mode the fee is held in the two globals `fee` (cash) and `feeRokok` (rokok items). Every cart reset must clear both. `rokokPickerHtml`/`readRokokPicker` provide the brand picker, and `cutFinished(lines)` cuts `finishedStock` with a floor of 0. Fee rokok stock is cut at Kasir payment, or when an order becomes Selesai.
+
+## Shift closing review (Berita acara tutup shift)
+
+The Kasir closing flow is short: cash amount and an optional note, then Kepala Toko authorization, then a success modal. The Kasir never sees the expected cash or the difference. `finishClosing()` adds a record to `shiftClosings`, an array of objects in `app.js` (one row per `BA-0920-S<n>`, replaced if that shift closes again), with status "Belum Diperiksa". The Admin › Shift & pengguna panel (`renderClosings()`, `#baTable`) lists them. `openClosingReview(id)` renders a full detail page into `section#closingReview`: cash recap, transactions, cancel history, and paging that is only an example. Any Kepala Toko of the outlet can mark a record "Sudah Diperiksa" with a BA note and a confirmation checkbox. Administrator can only view.
 
 ## Raw material requests (Permintaan barang)
 

@@ -67,7 +67,7 @@
       </section>
 
       <section id="inventory" class="view">
-        <header class="topbar"><div><p class="eyebrow">OPERASIONAL OUTLET</p><h1>Persediaan</h1></div><div class="top-actions"><button class="btn ghost" id="productionIssue">− Keluarkan untuk produksi</button><button class="btn primary" id="transferStock">⇄ Transfer antar toko</button></div></header>
+        <header class="topbar"><div><p class="eyebrow">OPERASIONAL OUTLET</p><h1>Persediaan</h1></div><div class="top-actions"><button class="btn primary" id="transferStock">⇄ Transfer antar toko</button></div></header>
         <div class="summary-grid">
           <article><span class="metric-icon amber">!</span><div><small>Stok menipis</small><strong id="lowStockCount">6 item</strong></div><span class="trend warn">Perlu restok</span></article>
           <article><span class="metric-icon green">✓</span><div><small>Bahan baku</small><strong id="rawItemCount">48 item</strong></div><span class="trend">Aktif</span></article>
@@ -76,8 +76,11 @@
         <div class="stock-ledger-tabs"><button class="active" data-stock="raw">LPP bahan baku</button><button data-stock="finished">LPP barang dagangan</button><span>Dua buku stok dicatat terpisah</span></div>
         <div class="inventory-grid">
           <article class="panel"><div class="panel-head"><div><h2 id="stockTitle">Stok bahan baku</h2><p id="stockSubtitle">Masuk, pemakaian produksi, dan transfer.</p></div><button class="btn ghost" id="stockIn">+ Stok masuk</button></div><div id="rawTable"></div></article>
-          <article class="panel"><div class="panel-head"><div><h2>Riwayat TAT</h2><p>Transfer antar toko terbaru.</p></div><button class="text-btn">Lihat semua</button></div><div class="timeline" id="tatList"></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Riwayat mutasi stok</h2><p>Transfer, produksi, dan penjualan terbaru.</p></div><button class="text-btn">Lihat semua</button></div><div class="timeline" id="tatList"></div></article>
         </div>
+        <article class="panel hidden" id="productionPanel">
+          <div class="panel-head"><div><h2>Riwayat produksi</h2><p>Konversi bahan baku menjadi barang dagangan beserta biaya dan HPP.</p></div></div><div class="table-scroll" id="productionTable"></div>
+        </article>
         <article class="panel" id="requestPanel">
           <div class="panel-head"><div><h2>Permintaan barang</h2><p id="requestCount">Pengajuan bahan baku, persetujuan, PO, dan penerimaan.</p></div><button class="btn primary" id="addRequest">+ Buat permintaan</button></div>
           <div class="order-toolbar"><div class="order-chips" id="requestStatusFilter"><button class="active" data-status="Semua">Semua</button><button data-status="Menunggu persetujuan">Menunggu persetujuan</button><button data-status="Disetujui">Disetujui</button><button data-status="PO dicetak">PO dicetak</button><button data-status="Selesai">Selesai</button><button data-status="Ditolak">Ditolak</button></div><label class="search"><span>⌕</span><input id="requestSearch" placeholder="Cari no. permintaan atau peminta..." /></label></div>
@@ -128,7 +131,7 @@
                 <div class="of-rest"><span>Sisa</span><strong id="ofRest">Rp0</strong></div>
                 <p class="form-step">4. Fee driver <small>opsional, biaya keluar</small></p>
                 <label class="check-row"><input type="checkbox" id="ofFeeOn" /> Ada fee driver</label>
-                <div id="ofFeeFields" class="of-fields hidden"><label>Bentuk fee<select id="ofFeeType"><option value="cash">Uang tunai</option><option value="stock">Rokok</option></select></label><label id="ofFeeLabel">Nominal fee<input id="ofFeeValue" type="number" min="0" /></label></div>
+                <div id="ofFeeFields" class="of-fields hidden"><label>Bentuk fee<select id="ofFeeType"><option value="cash">Uang tunai</option><option value="stock">Rokok</option></select></label><label id="ofFeeLabel">Nominal fee<input id="ofFeeValue" type="number" min="0" /></label><div id="ofRokokPicker" class="rokok-picker hidden"></div></div>
                 <p class="form-step">5. Status order</p>
                 <div class="of-options"><label class="check-row"><input type="radio" name="ofStatus" value="Open" checked /> Open – tampil di Kasir</label><label class="check-row"><input type="radio" name="ofStatus" value="Selesai" /> Selesai</label></div>
                 <p class="order-hint hidden" id="ofStatusHint">Stok akan dipotong saat disimpan.</p>
@@ -162,19 +165,21 @@
         <div id="adminUsers" class="admin-content active"><div class="summary-grid">
           <article><span class="metric-icon green">3</span><div><small>Shift aktif</small><strong>3 shift</strong></div><span class="trend">24 jam</span></article>
           <article><span class="metric-icon blue">8</span><div><small>Outlet terdaftar</small><strong>8 outlet</strong></div><span class="trend">Aktif</span></article>
-          <article><span class="metric-icon amber">!</span><div><small>BA menunggu owner</small><strong>2 dokumen</strong></div><span class="trend warn">Tinjau</span></article>
+          <article><span class="metric-icon amber">!</span><div><small>BA belum diperiksa</small><strong id="baPending">-</strong></div><span class="trend warn">Tinjau</span></article>
         </div>
         <div class="admin-grid">
-          <article class="panel"><div class="panel-head"><div><h2>Pengaturan 3 shift</h2><p>Kepala Toko wajib menyelesaikan berita acara sebelum shift ditutup.</p></div><button class="btn ghost" id="editShifts">Ubah jadwal</button></div><div id="shiftCards"></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Pengaturan 3 shift</h2><p>Kepala Toko memverifikasi tutup shift Kasir, lalu memeriksa berita acaranya di bawah.</p></div><button class="btn ghost" id="editShifts">Ubah jadwal</button></div><div id="shiftCards"></div></article>
           <article class="panel"><div class="panel-head"><div><h2>Pengguna & akses outlet</h2><p>Kasir dibatasi pada outlet sesuai login.</p></div></div><div id="userList"></div></article>
         </div>
-        <article class="panel detail-panel"><div class="panel-head"><div><h2>Berita acara tutup shift</h2><p>Ringkasan selisih kas dan pembatalan untuk pemberitahuan owner.</p></div><button class="text-btn">Lihat arsip</button></div><div class="table-scroll" id="baTable"></div></article></div>
+        <article class="panel detail-panel"><div class="panel-head"><div><h2>Berita acara tutup shift</h2><p>Kepala Toko memeriksa ulang setiap tutup shift dari Kasir.</p></div><button class="text-btn">Lihat arsip</button></div><div class="table-scroll" id="baTable"></div></article></div>
         <div id="adminOutlets" class="admin-content"><article class="panel"><div class="panel-head"><div><h2>Informasi outlet</h2><p>Data identitas outlet yang digunakan pada login ini.</p></div><button class="btn primary" id="addOutlet">Edit informasi outlet</button></div><div class="outlet-grid single" id="outletGrid"></div></article></div>
         <div id="adminMenus" class="admin-content"><article class="panel"><div class="panel-head"><div><h2>Master menu</h2><p>Kelola kategori, harga jual, stok, dan resep produksi.</p></div><button class="btn primary" id="adminAddMenu">+ Tambah menu</button></div><div class="table-scroll" id="masterMenuTable"></div></article></div>
         <div id="adminLogins" class="admin-content"><article class="panel"><div class="panel-head"><div><h2>Master login</h2><p>Kelola akun, peran, outlet, shift, dan status akses.</p></div><button class="btn primary" id="addLogin">+ Tambah login</button></div><div class="table-scroll" id="masterLoginTable"></div></article></div>
-        <div id="adminAccess" class="admin-content"><article class="panel empty-admin"><h2>Hak akses</h2><p>Kasir hanya mengakses menu Kasir untuk transaksi penjualan di outlet serta shift sesuai login, termasuk memproses order Open outletnya (menambah item dan menerima pembayaran). Kepala Toko mengakses Persediaan, Pesanan (hanya outletnya), Laporan, dan Admin terbatas (shift &amp; pengguna, outlet), serta mengotorisasi tutup shift dan pembatalan item order untuk shift yang dipimpinnya. Administrator mengakses Persediaan, Pesanan, Laporan, dan seluruh Admin untuk semua outlet.</p></article></div>
+        <div id="adminAccess" class="admin-content"><article class="panel empty-admin"><h2>Hak akses</h2><p>Kasir hanya mengakses menu Kasir untuk transaksi penjualan di outlet serta shift sesuai login, termasuk memproses order Open outletnya (menambah item dan menerima pembayaran). Kepala Toko mengakses Persediaan, Pesanan (hanya outletnya), Laporan, dan Admin terbatas (shift &amp; pengguna, outlet), serta mengotorisasi tutup shift, memeriksa berita acara tutup shift outletnya, dan mengotorisasi pembatalan item order untuk shift yang dipimpinnya. Administrator mengakses Persediaan, Pesanan, Laporan, dan seluruh Admin untuk semua outlet.</p></article></div>
         <div id="adminNotifications" class="admin-content"><article class="panel empty-admin"><h2>Notifikasi owner</h2><p>Peringatan cancel, BA tutup shift, stok minimum, dan transfer antar toko dikirim melalui pusat notifikasi ini.</p></article></div>
       </section>
+
+      <section id="closingReview" class="view"></section>
     </main>
   </div>
 
