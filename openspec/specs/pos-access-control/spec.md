@@ -71,26 +71,30 @@ Pengguna dengan role Kasir SHALL hanya dapat mengakses view Kasir. Sidebar SHALL
 - **THEN** sidebar tampil kembali dengan menu sesuai role Kepala Toko
 
 ### Requirement: Menu yang dapat diakses Kepala Toko
-Pengguna dengan role Kepala Toko SHALL melihat menu Persediaan, Pesanan, Laporan, dan Admin, dan SHALL NOT melihat menu Kasir. Di dalam Admin, hanya tab "Shift & pengguna" dan "Outlet" yang tampil. Setelah login, view Laporan SHALL terbuka.
+Pengguna dengan role Kepala Toko SHALL melihat menu Laporan, Persediaan, Pesanan, dan Admin, dan SHALL NOT melihat menu Kasir. Di Persediaan, semua submenu tampil: Stok barang dagangan, Stok bahan baku, Mutasi stok, Stok opname, Permintaan barang, dan Master menu. Di Admin, hanya submenu "Outlet" dan "Shift" yang tampil. Setelah login, view Laporan SHALL terbuka.
 
 #### Scenario: Kepala Toko login
 - **WHEN** Budi Santoso login sebagai Kepala Toko
-- **THEN** sidebar menampilkan "Persediaan", "Pesanan", "Laporan", dan "Admin", tidak menampilkan "Kasir", dan view Laporan aktif
+- **THEN** sidebar menampilkan "Laporan", "Persediaan", "Pesanan", dan "Admin", tidak menampilkan "Kasir", dan view Laporan aktif
 
 #### Scenario: Tab Admin untuk Kepala Toko
-- **WHEN** Kepala Toko membuka menu Admin
-- **THEN** hanya tab "Shift & pengguna" dan "Outlet" yang tampil, sedangkan tab "Master menu", "Master login", "Hak akses", dan "Notifikasi owner" tidak tampil
+- **WHEN** Kepala Toko melihat grup Admin di sidebar
+- **THEN** hanya submenu "Outlet" dan "Shift" yang tampil, sedangkan "Pengguna", "Hak akses", dan "Notifikasi owner" tidak tampil
+
+#### Scenario: Submenu Persediaan untuk Kepala Toko
+- **WHEN** Kepala Toko melihat grup Persediaan di sidebar
+- **THEN** keenam submenu Persediaan tampil, termasuk "Stok opname" dan "Master menu"
 
 ### Requirement: Menu yang dapat diakses Administrator
-Pengguna dengan role Administrator SHALL melihat menu Persediaan, Pesanan, Laporan, dan Admin beserta semua tab Admin, dan SHALL NOT melihat menu Kasir. Setelah login, view Laporan SHALL terbuka.
+Pengguna dengan role Administrator SHALL melihat menu Laporan, Persediaan, Pesanan, dan Admin beserta semua submenu Persediaan dan Admin, dan SHALL NOT melihat menu Kasir. Setelah login, view Laporan SHALL terbuka.
 
 #### Scenario: Administrator login
 - **WHEN** `admin.rbt` login sebagai Administrator
-- **THEN** sidebar menampilkan "Persediaan", "Pesanan", "Laporan", dan "Admin", tidak menampilkan "Kasir", dan view Laporan aktif
+- **THEN** sidebar menampilkan "Laporan", "Persediaan", "Pesanan", dan "Admin", tidak menampilkan "Kasir", dan view Laporan aktif
 
 #### Scenario: Administrator login setelah Kepala Toko logout
-- **WHEN** Kepala Toko logout, lalu `admin.rbt` login dan membuka menu Admin
-- **THEN** keenam tab Admin tampil kembali
+- **WHEN** Kepala Toko logout, lalu `admin.rbt` login
+- **THEN** kelima submenu Admin tampil kembali, termasuk "Pengguna", "Hak akses", dan "Notifikasi owner"
 
 ### Requirement: Istilah Kepala Toko di UI POS
 UI POS SHALL memakai istilah "Kepala Toko" untuk peran yang sebelumnya disebut "Leader". Ini berlaku di pilihan peran dan jabatan, kartu shift, status berita acara, dan teks tutup shift. Label penanggung jawab outlet SHALL tetap "Penanggung jawab".
@@ -107,10 +111,33 @@ UI POS SHALL memakai istilah "Kepala Toko" untuk peran yang sebelumnya disebut "
 Panel "Hak akses" di Admin SHALL menjelaskan akses ketiga role sesuai perilaku sistem: Kasir, Kepala Toko, dan Administrator.
 
 #### Scenario: Membuka panel Hak akses
-- **WHEN** Administrator membuka tab "Hak akses"
+- **WHEN** Administrator membuka submenu "Hak akses"
 - **THEN** panel menjelaskan bahwa:
   - Kasir hanya mengakses Kasir untuk transaksi penjualan, termasuk memproses order Open outletnya.
-  - Kepala Toko mengakses Persediaan, Pesanan (hanya outletnya), Laporan, dan Admin terbatas (shift & pengguna, outlet), serta mengotorisasi tutup shift, memeriksa berita acara tutup shift outletnya, dan mengotorisasi pembatalan item order.
-  - Administrator mengakses Persediaan, Pesanan, Laporan, dan seluruh Admin untuk semua outlet.
-  
+  - Kepala Toko mengakses Laporan, Persediaan (Master menu hanya dapat dilihat, kecuali mengubah status aktif menu), Pesanan (hanya outletnya), dan Admin terbatas (Outlet dan Shift), serta mengotorisasi tutup shift, memeriksa berita acara tutup shift outletnya, mengotorisasi pembatalan item order, dan melakukan stock opname outletnya.
+  - Administrator mengakses Laporan, Persediaan, Pesanan, dan seluruh Admin untuk semua outlet, dan melihat riwayat stock opname semua outlet.
+
   Panel tidak lagi menyebut Kasir mengakses Persediaan, maupun Kepala Toko atau Administrator mengakses menu Kasir.
+
+### Requirement: Master menu untuk Kepala Toko: lihat dan ubah status aktif
+Kepala Toko SHALL dapat membuka submenu "Master menu" dan melihat detail setiap menu. Kepala Toko MUST NOT dapat menambah menu atau mengubah field menu selain status aktif. Karena role Kepala Toko memiliki akses submenu Master menu di pengaturan akses role, Kepala Toko SHALL dapat mengubah toggle "Menu aktif" di popup Detail dan menyimpannya dengan tombol "Simpan status". Administrator SHALL tetap dapat menambah dan mengubah semua field menu.
+
+#### Scenario: Kepala Toko membuka Master menu
+- **WHEN** Budi Santoso membuka submenu "Master menu"
+- **THEN** tabel master menu tampil tanpa tombol "+ Tambah menu", lengkap dengan filter Kategori, filter Status, dan kotak cari
+
+#### Scenario: Kepala Toko membuka detail menu
+- **WHEN** Kepala Toko menekan "Detail" pada sebuah menu
+- **THEN** modal "Detail item menu" tampil dengan semua field terkunci kecuali toggle "Menu aktif", serta tombol "Batal" dan "Simpan status"
+
+#### Scenario: Kepala Toko menonaktifkan menu
+- **WHEN** Kepala Toko membuka Detail "Bakso", menghapus centang "Menu aktif", lalu menekan "Simpan status"
+- **THEN** toast "Bakso dinonaktifkan" tampil, kolom STATUS "Bakso" menjadi "Nonaktif", dan "Bakso" tidak tampil lagi di grid Kasir
+
+#### Scenario: Kepala Toko mengaktifkan menu
+- **WHEN** Kepala Toko membuka Detail "Jeruk hangat", mencentang "Menu aktif", lalu menekan "Simpan status"
+- **THEN** toast "Jeruk hangat diaktifkan" tampil dan kolom STATUS menjadi "Aktif"
+
+#### Scenario: Administrator tetap mengelola menu
+- **WHEN** Administrator membuka submenu "Master menu"
+- **THEN** tombol "+ Tambah menu" tampil dan semua field detail menu dapat diubah serta disimpan

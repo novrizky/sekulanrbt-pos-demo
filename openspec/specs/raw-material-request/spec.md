@@ -5,27 +5,6 @@ TBD - created by archiving change add-raw-material-request. Update Purpose after
 
 ## Requirements
 
-### Requirement: Section Permintaan barang di Persediaan
-Halaman Persediaan SHALL menampilkan section "Permintaan barang" di bawah panel "Stok bahan baku" dan "Riwayat TAT". Section ini tampil saat tab "LPP bahan baku" maupun "LPP barang dagangan" aktif. Daftar SHALL memiliki kolom NO. PERMINTAAN, TANGGAL, OUTLET, PEMINTA, ITEM, NO. PO, STATUS, dan AKSI, dengan permintaan terbaru di atas. Daftar SHALL bisa difilter berdasarkan status (Semua, Menunggu persetujuan, Disetujui, PO dicetak, Selesai, Ditolak) dan dicari berdasarkan nomor permintaan atau nama peminta.
-
-Data contoh SHALL berisi: REQ-0920-001 (Budi Santoso, Menunggu persetujuan), REQ-0920-002 (Raka Administrator, Sekulan RBT 519B, Disetujui, PO-0920-002), REQ-0920-003 (Rina Pratiwi, PO dicetak, vendor CV Sumber Pangan), REQ-0920-004 (Taufik Hadi, Selesai, dengan catatan selisih), dan REQ-0920-005 (Budi Santoso, Ditolak).
-
-#### Scenario: Membuka Persediaan
-- **WHEN** Administrator membuka menu "Persediaan"
-- **THEN** section "Permintaan barang" tampil di bawah panel "Stok bahan baku" dan "Riwayat TAT" dengan lima permintaan contoh
-
-#### Scenario: Section tetap tampil di tab barang dagangan
-- **WHEN** pengguna memilih tab "LPP barang dagangan"
-- **THEN** section "Permintaan barang" tetap tampil tanpa perubahan
-
-#### Scenario: Filter status
-- **WHEN** pengguna memilih filter "Menunggu persetujuan"
-- **THEN** hanya REQ-0920-001 yang tampil
-
-#### Scenario: Pencarian peminta
-- **WHEN** pengguna mengetik "rina" di kolom pencarian
-- **THEN** hanya permintaan dengan peminta Rina Pratiwi yang tampil
-
 ### Requirement: Informasi peminta dan visibilitas
 Kolom PEMINTA SHALL menampilkan nama dan peran pembuat permintaan (mis. "Budi Santoso" dengan keterangan "Kepala Toko"). Kepala Toko SHALL melihat semua permintaan, termasuk yang dibuat Kepala Toko lain dan Administrator untuk outlet lain. Administrator SHALL melihat semua permintaan.
 
@@ -148,21 +127,46 @@ Detail permintaan SHALL menampilkan ringkasan (outlet, peminta dan perannya, tan
 - **WHEN** pengguna membuka detail REQ-0920-004
 - **THEN** timeline menampilkan urutan diajukan oleh Taufik Hadi, disetujui oleh Raka Administrator, PO dicetak, dan diterima dengan nomor GRN beserta catatan selisih Minyak goreng
 
-### Requirement: Data bahan baku dan definisi Menipis konsisten
-Data bahan baku SHALL berisi sekitar 15–18 item bahan baku realistis, ditambah item bersama (Rokok Brand A–E dan Air mineral) yang juga tercatat sebagai barang dagangan. Beberapa item berstatus Menipis. Status Menipis SHALL memakai aturan `stok <= minimum` di tabel stok bahan baku, tabel stok barang dagangan, maupun form permintaan. Kartu ringkasan "Bahan baku" SHALL menghitung semua item di LPP bahan baku, termasuk item bersama. Kartu "Stok menipis" SHALL menghitung setiap item Menipis tepat satu kali, walaupun item bersama tampil di kedua LPP. Tombol "+ Stok masuk" yang lama SHALL tetap berfungsi untuk penerimaan tanpa PO, termasuk untuk item bersama.
+### Requirement: Submenu Permintaan barang
+Submenu "Permintaan barang" di grup Persediaan SHALL menampilkan section "Permintaan barang" sebagai isi halaman, dan section ini MUST NOT tampil di submenu Persediaan lainnya. Daftar SHALL memiliki kolom NO. PERMINTAAN, TANGGAL, OUTLET, PEMINTA, ITEM, NO. PO, STATUS, dan AKSI, terbaru di atas, dapat difilter berdasarkan status (Semua, Menunggu persetujuan, Disetujui, PO dicetak, Selesai, Ditolak), dan dapat dicari berdasarkan nomor permintaan atau nama peminta.
+
+Data contoh SHALL berisi: REQ-0920-001 (Budi Santoso, Menunggu persetujuan), REQ-0920-002 (Raka Administrator, Sekulan RBT 519B, Disetujui, PO-0920-002), REQ-0920-003 (Rina Pratiwi, PO dicetak, vendor CV Sumber Pangan), REQ-0920-004 (Taufik Hadi, Selesai, dengan catatan selisih), dan REQ-0920-005 (Budi Santoso, Ditolak).
+
+#### Scenario: Membuka Permintaan barang
+- **WHEN** Administrator menekan submenu "Permintaan barang"
+- **THEN** section "Permintaan barang" tampil dengan lima permintaan contoh, tanpa tabel stok di halaman itu
+
+#### Scenario: Tidak tampil di submenu stok
+- **WHEN** pengguna membuka submenu "Stok bahan baku" atau "Stok barang dagangan"
+- **THEN** section "Permintaan barang" tidak tampil
+
+#### Scenario: Menutup form permintaan
+- **WHEN** pengguna membuka "+ Buat permintaan" lalu menekan "Batal"
+- **THEN** form tertutup dan halaman kembali ke daftar dengan judul "Permintaan barang"
+
+#### Scenario: Filter status
+- **WHEN** pengguna memilih filter "Menunggu persetujuan"
+- **THEN** hanya REQ-0920-001 yang tampil
+
+#### Scenario: Pencarian peminta
+- **WHEN** pengguna mengetik "rina" di kolom pencarian
+- **THEN** hanya permintaan dengan peminta Rina Pratiwi yang tampil
+
+### Requirement: Data bahan baku dan Menipis per buku stok
+Data bahan baku SHALL berisi sekitar 15–18 item bahan baku realistis, ditambah item bersama (Rokok Brand A–E dan Air mineral). Status Menipis SHALL memakai aturan `stok <= minimum` di tabel stok bahan baku, tabel stok barang dagangan, maupun form permintaan. Kartu "Jumlah item" di submenu Stok bahan baku SHALL menghitung semua item bahan baku termasuk item bersama. Kartu "Stok menipis" di setiap submenu stok SHALL menghitung item Menipis di buku stok halaman itu. Tombol "+ Stok masuk" SHALL tetap berfungsi untuk penerimaan tanpa PO, termasuk untuk item bersama.
 
 #### Scenario: Status konsisten
 - **WHEN** sebuah bahan baku punya stok sama dengan minimumnya
 - **THEN** item itu berstatus "Menipis" di tabel stok dan di form permintaan
 
 #### Scenario: Stok masuk tanpa PO
-- **WHEN** pengguna menekan "+ Stok masuk" di tab LPP bahan baku
+- **WHEN** pengguna menekan "+ Stok masuk" di submenu Stok bahan baku
 - **THEN** form stok bahan baku masuk yang lama terbuka seperti sebelumnya, dan pilihan bahan baku juga memuat item bersama
 
-#### Scenario: Item bersama Menipis dihitung sekali
-- **WHEN** Rokok Brand D (stok 6, minimum 10) berstatus Menipis dan tampil di kedua LPP
-- **THEN** kartu "Stok menipis" menambah 1 untuk Rokok Brand D, bukan 2
+#### Scenario: Item bersama Menipis dihitung per halaman stok
+- **WHEN** Rokok Brand D (stok 6, minimum 10) berstatus Menipis
+- **THEN** kartu "Stok menipis" di Stok bahan baku dan di Stok barang dagangan masing-masing menghitung Rokok Brand D satu kali
 
-#### Scenario: Kartu Bahan baku memuat item bersama
-- **WHEN** Administrator membuka Persediaan
-- **THEN** kartu "Bahan baku" menampilkan "23 item" (17 bahan baku ditambah 6 item bersama)
+#### Scenario: Kartu Jumlah item memuat item bersama
+- **WHEN** Administrator membuka submenu Stok bahan baku
+- **THEN** kartu "Jumlah item" menampilkan "23 item" (17 bahan baku ditambah 6 item bersama)

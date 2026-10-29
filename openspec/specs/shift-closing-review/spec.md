@@ -7,14 +7,14 @@ TBD - created by archiving change shift-closing-review. Update Purpose after arc
 ## Requirements
 
 ### Requirement: Daftar tutup shift di panel berita acara
-Panel "Berita acara tutup shift" di Admin › Shift & pengguna SHALL menampilkan daftar data tutup shift, yang terbaru di atas, dengan kolom NO. BA, PERIODE, KASIR, UANG FISIK, SELISIH, CANCEL, STATUS, dan AKSI. Setiap tutup shift dari Kasir SHALL menambah baris baru berstatus "Belum Diperiksa". Panel SHALL dapat dibuka oleh Kepala Toko dan Administrator.
+Panel "Berita acara tutup shift" di Admin › Shift SHALL menampilkan daftar data tutup shift, yang terbaru di atas, dengan kolom NO. BA, PERIODE, KASIR, UANG FISIK, SELISIH, CANCEL, STATUS, dan AKSI. Setiap tutup shift dari Kasir SHALL menambah baris baru berstatus "Belum Diperiksa". Panel SHALL dapat dibuka oleh Kepala Toko dan Administrator.
 
 #### Scenario: Tutup shift baru masuk daftar
-- **WHEN** Ayu Setiani menutup Shift 1 dengan uang 2490000, lalu Budi Santoso login dan membuka Admin
+- **WHEN** Ayu Setiani menutup Shift 1 dengan uang 2490000, lalu Budi Santoso login dan membuka submenu Admin › Shift
 - **THEN** baris teratas panel adalah "BA-0920-S1" dengan periode "20 Sep 2026 • Shift 1", kasir "Ayu Setiani", uang fisik "Rp2.490.000", selisih "Kurang Rp25.000", cancel "2", dan status "Belum Diperiksa"
 
 #### Scenario: Data contoh
-- **WHEN** Kepala Toko membuka Admin sebelum ada tutup shift baru
+- **WHEN** Kepala Toko membuka submenu Admin › Shift sebelum ada tutup shift baru
 - **THEN** panel menampilkan BA-0919-S3 berstatus "Belum Diperiksa", serta BA-0919-S2 dan BA-0919-S1 berstatus "Sudah Diperiksa"
 
 #### Scenario: Shift yang sama ditutup ulang
@@ -22,11 +22,11 @@ Panel "Berita acara tutup shift" di Admin › Shift & pengguna SHALL menampilkan
 - **THEN** panel tetap hanya memiliki satu baris "BA-0920-S1" dengan data penutupan terakhir
 
 ### Requirement: Status pemeriksaan tutup shift
-Data tutup shift SHALL hanya memiliki dua status, yaitu "Belum Diperiksa" dan "Sudah Diperiksa". Metrik ringkasan di tab Shift & pengguna SHALL menampilkan "BA belum diperiksa" beserta jumlah data berstatus "Belum Diperiksa".
+Data tutup shift SHALL hanya memiliki dua status, yaitu "Belum Diperiksa" dan "Sudah Diperiksa". Kartu ringkasan di submenu Admin › Shift SHALL menampilkan "BA belum diperiksa" dan "BA sudah diperiksa" beserta jumlah data pada masing-masing status.
 
 #### Scenario: Metrik mengikuti data
 - **WHEN** panel berisi BA-0920-S1 dan BA-0919-S3 berstatus "Belum Diperiksa"
-- **THEN** metrik menampilkan "BA belum diperiksa" dengan nilai "2 dokumen"
+- **THEN** kartu "BA belum diperiksa" menampilkan nilai "2 dokumen"
 
 #### Scenario: Status lama tidak dipakai
 - **WHEN** panel ditampilkan
@@ -44,7 +44,7 @@ Kepala Toko SHALL dapat memeriksa data tutup shift dari semua shift di outletnya
 - **THEN** detail tampil tanpa field "Catatan berita acara", tanpa centang konfirmasi, dan tanpa tombol "Tandai sudah diperiksa"
 
 ### Requirement: Detail pemeriksaan tutup shift
-Detail tutup shift SHALL tampil sebagai halaman tersendiri di dalam POS, bukan modal. Halaman ini SHALL memiliki tombol "Kembali" ke panel berita acara di Admin › Shift & pengguna. Detail SHALL menampilkan seluruh data yang diinputkan Kasir beserta perhitungan sistem:
+Detail tutup shift SHALL tampil sebagai halaman tersendiri di dalam POS, bukan modal. Halaman ini SHALL memiliki tombol "Kembali" ke panel berita acara di Admin › Shift. Detail SHALL menampilkan seluruh data yang diinputkan Kasir beserta perhitungan sistem:
 - modal awal, penjualan tunai, fee driver tunai, seharusnya di laci, dan uang fisik;
 - selisih, dengan label "Lebih", "Kurang", atau "Sesuai";
 - catatan kasir ("-" bila kosong);
@@ -71,7 +71,7 @@ Detail tutup shift SHALL tampil sebagai halaman tersendiri di dalam POS, bukan m
 
 #### Scenario: Kembali ke daftar
 - **WHEN** pengguna menekan "Kembali" di halaman detail tanpa menandai apa pun
-- **THEN** panel "Berita acara tutup shift" di Admin › Shift & pengguna tampil lagi dan status tutup shift tersebut tidak berubah
+- **THEN** submenu Admin › Shift tampil lagi dengan "Shift" aktif di sidebar, panel "Berita acara tutup shift" terlihat, dan status tutup shift tersebut tidak berubah
 
 ### Requirement: Detail item transaksi dan pembatalan
 Tabel transaksi SHALL berkolom NO. TRANSAKSI, JAM, JUMLAH ITEM, METODE, TOTAL, dan AKSI "Detail", tanpa menuliskan daftar item dalam satu baris. Tabel histori cancel SHALL berkolom ID, WAKTU, ITEM, KASIR, dan AKSI "Detail". Aksi "Detail" pada baris transaksi SHALL membuka modal berisi nomor transaksi, jam, metode, tabel item (ITEM, QTY, HARGA, SUBTOTAL), dan total. Harga item SHALL diambil dari harga menu. Aksi "Detail" pada baris histori cancel SHALL membuka modal berisi ID, waktu, shift, item, harga, alasan, dan kasir. Menutup modal SHALL tetap menampilkan halaman detail tutup shift.

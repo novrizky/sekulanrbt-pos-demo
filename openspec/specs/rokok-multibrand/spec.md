@@ -36,11 +36,15 @@ Saat Kasir mengonfirmasi pembayaran transaksi biasa, stok setiap merek rokok di 
 - **THEN** stok Rokok Brand D menjadi 0, bukan minus
 
 ### Requirement: Fee driver rokok multi-merek di Kasir
-Pada modal "Tambahkan fee driver", bila Kasir memilih bentuk "Rokok", modal SHALL menampilkan daftar semua merek rokok beserta stoknya dan input jumlah bungkus per merek. Kasir SHALL dapat mengisi lebih dari satu merek. Menyimpan tanpa satu pun jumlah lebih dari 0 SHALL ditolak. Fee rokok SHALL hanya tampil di baris "Fee driver" cart (bukan sebagai baris item) dan SHALL NOT mengurangi total pembayaran. Memilih bentuk "Uang tunai" SHALL mengosongkan fee rokok, dan sebaliknya.
+Pada modal "Tambahkan fee driver", bila Kasir memilih bentuk "Rokok", modal SHALL menampilkan daftar semua merek rokok yang berstatus aktif di Master menu beserta stoknya dan input jumlah bungkus per merek. Merek rokok yang berstatus Nonaktif MUST NOT tampil di daftar ini, kecuali merek yang sudah tersimpan di fee rokok cart atau order tersebut. Kasir SHALL dapat mengisi lebih dari satu merek. Menyimpan tanpa satu pun jumlah lebih dari 0 SHALL ditolak. Fee rokok SHALL hanya tampil di baris "Fee driver" cart (bukan sebagai baris item) dan SHALL NOT mengurangi total pembayaran. Memilih bentuk "Uang tunai" SHALL mengosongkan fee rokok, dan sebaliknya.
 
 #### Scenario: Menyimpan fee rokok beberapa merek
 - **WHEN** Kasir pada transaksi biasa memilih "Rokok", mengisi Brand A 2 dan Brand C 1, lalu menekan "Simpan fee"
 - **THEN** toast "Fee rokok dicatat: Brand A ×2, Brand C ×1. Stok dipotong saat pembayaran." tampil, baris fee cart berlabel "Fee driver (potong stok)" dan menampilkan "Brand A ×2, Brand C ×1", tidak ada baris item rokok baru, dan total pembayaran tidak berubah
+
+#### Scenario: Merek rokok nonaktif tidak tampil
+- **WHEN** Administrator menonaktifkan "Rokok Brand E" di Master menu, lalu Kasir memilih "Rokok" di modal fee driver
+- **THEN** daftar merek hanya berisi Rokok Brand A sampai Rokok Brand D
 
 #### Scenario: Fee rokok tanpa merek dipilih
 - **WHEN** Kasir memilih "Rokok" dan menekan "Simpan fee" tanpa mengisi jumlah merek mana pun
