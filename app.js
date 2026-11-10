@@ -25,14 +25,89 @@ Object.entries(menuData).forEach(([cat,items])=>items.forEach((x,i)=>{const unit
 Object.entries(menuData).forEach(([cat,items])=>items.forEach(x=>{x[10]=x[10]||((cat==='Paket Bis Wisata'||cat==='Paket PO Bis Malam')?10:1);x[11]=x[11]||defaultDivision(cat)}));
 const menuActive=x=>x[6]!==false,nextMenuCode=cat=>{const p=`MNU-${cat.slice(0,2).toUpperCase()}`;return p+String(Math.max(0,...Object.values(menuData).flat().filter(x=>x[4]?.startsWith(p)).map(x=>+x[4].slice(p.length)||0))+1).padStart(2,'0')};
 let category='Paket Bis Wisata'; let cart=[]; let fee=0; let feeRokok=[]; let activeOrder=null;
+const qtyReductionLog=[];
 const $=s=>document.querySelector(s); const $$=s=>document.querySelectorAll(s);
 function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 function renderCategories(){const host=$('#categoryTabs');host.innerHTML=Object.keys(menuData).map(x=>`<button class="${x===category?'active':''}" data-cat="${x}">${x}</button>`).join('');host.querySelectorAll('button').forEach(b=>b.onclick=()=>{category=b.dataset.cat;renderCategories();renderMenu()})}
 function renderMenu(filter=''){const items=menuData[category].filter(menuActive).filter(x=>x[0].toLowerCase().includes(filter.toLowerCase())||String(x[1]).includes(filter));$('#categoryTitle').textContent=category==='Paket'?'Menu paket':category;$('#itemCount').textContent=`${items.length} pilihan tersedia`;$('#menuGrid').innerHTML=items.map((x,i)=>`<button class="menu-card" data-i="${i}"><div class="food-art"><span>${x[3]}</span></div><div class="menu-info"><strong>${x[0]}</strong><small>${x[2]}</small><span>${rupiah(x[1])}</span></div></button>`).join('');$('#menuGrid').querySelectorAll('.menu-card').forEach((b,i)=>b.onclick=()=>qtyModal(items[i]))}
 function addToCart(item,qty){const found=cart.find(x=>x.name===item[0]&&!x.saved);if(found)found.qty=Math.min(999,found.qty+qty);else cart.push({name:item[0],price:item[1],qty});renderCart();closeModal();showToast(`${item[0]} × ${qty} ditambahkan`)}
 function qtyModal(item){openModal(`<h2>Tambah ke pesanan</h2><div class="qty-item"><strong>${item[0]}</strong><small>${item[2]}</small><span>${rupiah(item[1])} / item</span></div><label>Jumlah</label><div class="qty qty-pick"><button id="qtyMinus">−</button><input id="qtyInput" class="qty-input" inputmode="numeric" maxlength="3" value="1"><button id="qtyPlus">+</button></div><div class="modal-actions"><button class="btn ghost" data-close>Batal</button><button class="btn primary" id="qtyAdd">Tambahkan</button></div>`);const input=$('#qtyInput'),val=()=>Math.min(999,Math.max(1,+input.value||1));input.oninput=()=>input.value=input.value.replace(/\D/g,'').slice(0,3);input.onblur=()=>input.value=val();$('#qtyMinus').onclick=()=>input.value=Math.max(1,val()-1);$('#qtyPlus').onclick=()=>input.value=Math.min(999,val()+1);$('#qtyAdd').onclick=()=>addToCart(item,val());input.focus();input.select()}
-function renderCart(){const host=$('#cartList');host.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-item"><div><strong>${x.name}${activeOrder?`<em class="line-tag${x.saved?'':' new'}">${x.saved?'tersimpan':'baru'}</em>`:''}</strong><small>${rupiah(x.price)} / item</small><div class="qty"><span>× ${x.qty}</span></div></div><div class="price">${rupiah(x.price*x.qty)}<button class="cancel-link" data-act="cancel" data-i="${i}">Batalkan</button></div></div>`).join(''):`<div class="empty-cart">Belum ada menu dipilih.<br>Pilih menu untuk memulai pesanan.</div>`;host.querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(b.dataset.act==='cancel')openCancel(i);renderCart()});const sub=cart.reduce((s,x)=>s+x.price*x.qty,0);renderCartHeader(sub);if(activeOrder)return renderOrderTotals(sub);const grand=sub-fee;$('#subtotal').textContent=rupiah(sub);$('#feeLineLabel').textContent=feeRokok.length?'Fee driver (potong stok)':'Fee driver';$('#feeTotal').textContent=feeRokok.length?feeText({type:'stock',items:feeRokok}):`-${rupiah(fee)}`;$('#feeLine').classList.toggle('hidden',!fee&&!feeRokok.length);$('#paidLine').classList.add('hidden');$('#grandLabel').textContent='Total pembayaran';$('.totals .grand-total').classList.remove('over-line');$('#grandTotal').textContent=rupiah(grand);$('#payButton').disabled=false;$('#payButton span').textContent='Bayar sekarang';$('#payAmount').textContent=rupiah(grand)}
-function openModal(html){$('#modalContent').classList.remove('wide-modal','menu-modal','price-list-modal','required-modal');$('#modalContent').innerHTML=html;$('#modalBackdrop').classList.add('open');$('#modalContent').querySelectorAll('[data-close]').forEach(x=>x.onclick=closeModal)} function closeModal(){$('#modalBackdrop').classList.remove('open');$('#modalContent').classList.remove('wide-modal','menu-modal','price-list-modal','required-modal')}
+function changeCartQty(index, delta){
+  const item=cart[index];
+  if(!item)return;
+  if(delta<0)return openQtyReduction(index);
+  const next=item.qty+delta;
+  if(next<1)return showToast('Jumlah minimal 1. Gunakan Batalkan untuk menghapus item.');
+  if(next>999)return showToast('Jumlah maksimal 999 per item.');
+  if(activeOrder&&item.saved){
+    const newTotal=cart.reduce((sum,line,i)=>sum+line.price*(i===index?next:line.qty),0);
+    if(newTotal<orderMoney(activeOrder).paid)return showToast('Jumlah tidak dapat dikurangi karena pembayaran order sudah melebihi total baru.');
+    const original=activeOrder.items.find(line=>line.name===item.name);
+    if(original)original.qty=next;
+    renderOrders();
+  }
+  item.qty=next;
+  renderCart();
+}
+function openQtyReduction(index){
+  const item=cart[index];
+  if(!item||item.qty<=1)return;
+  openModal(`<h2>Kurangi jumlah pesanan</h2><p>${esc(item.name)} saat ini ${item.qty} item. Pengurangan jumlah dicatat sebagai perubahan pesanan, bukan pembatalan item.</p><label>Jumlah yang dikurangi</label><input id="reduceQty" type="number" min="1" max="${item.qty-1}" value="1"><label>Alasan pengurangan</label><select id="reduceReason"><option value="">Pilih alasan</option><option>Perubahan pesanan pelanggan</option><option>Jumlah salah input</option><option>Stok tidak tersedia</option><option>Lainnya</option></select><label>Catatan tambahan</label><input id="reduceNote" placeholder="Wajib diisi jika memilih Lainnya"><div class="modal-actions"><button class="btn ghost" data-close>Kembali</button><button class="btn primary" id="confirmReduce">Simpan pengurangan</button></div>`);
+  $('#confirmReduce').onclick=()=>{
+    const qty=Number($('#reduceQty').value),reason=$('#reduceReason').value,note=$('#reduceNote').value.trim();
+    if(!Number.isInteger(qty)||qty<1||qty>=item.qty)return showToast(`Jumlah pengurangan harus 1–${item.qty-1}`);
+    if(!reason)return showToast('Pilih alasan pengurangan qty');
+    if(reason==='Lainnya'&&!note)return showToast('Catatan tambahan wajib diisi untuk alasan Lainnya');
+    const next=item.qty-qty;
+    if(activeOrder&&item.saved){
+      const newTotal=cart.reduce((sum,line,i)=>sum+line.price*(i===index?next:line.qty),0);
+      if(newTotal<orderMoney(activeOrder).paid)return showToast('Jumlah tidak dapat dikurangi karena pembayaran order sudah melebihi total baru.');
+      const original=activeOrder.items.find(line=>line.name===item.name);
+      if(original)original.qty=next;
+      renderOrders();
+    }
+    qtyReductionLog.unshift({time:new Date().toLocaleString('id-ID'),order:activeOrder?.id||$('#cartOrderNo').textContent,item:item.name,from:item.qty,to:next,reason,note});
+    item.qty=next;
+    item.qtyReason=note?`${reason} — ${note}`:reason;
+    renderCart();closeModal();showToast(`Qty ${item.name} dikurangi ${qty}. Alasan tercatat.`);
+  };
+}
+function renderCart(){
+  const host=$('#cartList');
+  host.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-item"><div><strong>${x.name}${activeOrder?`<em class="line-tag${x.saved?'':' new'}">${x.saved?'tersimpan':'baru'}</em>`:''}</strong><small>${rupiah(x.price)} / item</small><div class="qty cart-qty"><button type="button" data-act="minus" data-i="${i}" aria-label="Kurangi jumlah ${x.name}" ${x.qty<=1?'disabled':''}>−</button><span>× ${x.qty}</span><button type="button" data-act="plus" data-i="${i}" aria-label="Tambah jumlah ${x.name}" ${x.qty>=999?'disabled':''}>+</button></div>${x.qtyReason?`<small class="qty-reason">Pengurangan: ${esc(x.qtyReason)}</small>`:''}</div><div class="price">${rupiah(x.price*x.qty)}<button type="button" class="cancel-link" data-act="cancel" data-i="${i}">Batalkan</button></div></div>`).join(''):'<div class="empty-cart">Belum ada menu dipilih.<br>Pilih menu untuk memulai pesanan.</div>';
+  host.querySelectorAll('button[data-act]').forEach(button=>button.onclick=()=>{
+    const index=+button.dataset.i;
+    if(button.dataset.act==='cancel')return openCancel(index);
+    changeCartQty(index,button.dataset.act==='plus'?1:-1);
+  });
+  const sub=cart.reduce((sum,x)=>sum+x.price*x.qty,0);
+  renderCartHeader(sub);
+  if(activeOrder)return renderOrderTotals(sub);
+  const grand=sub-fee;
+  $('#subtotal').textContent=rupiah(sub);
+  $('#feeLineLabel').textContent=feeRokok.length?'Fee driver (potong stok)':'Fee driver';
+  $('#feeTotal').textContent=feeRokok.length?feeText({type:'stock',items:feeRokok}):`-${rupiah(fee)}`;
+  $('#feeLine').classList.toggle('hidden',!fee&&!feeRokok.length);
+  $('#paidLine').classList.add('hidden');
+  $('#grandLabel').textContent='Total pembayaran';
+  $('.totals .grand-total').classList.remove('over-line');
+  $('#grandTotal').textContent=rupiah(grand);
+  $('#payButton').disabled=false;
+  $('#payButton span').textContent='Bayar sekarang';
+  $('#payAmount').textContent=rupiah(grand);
+}
+function openModal(html){
+  const content=$('#modalContent');
+  content.className='modal';
+  content.innerHTML=html;
+  $('#modalBackdrop').classList.add('open');
+  content.querySelectorAll('[data-close]').forEach(button=>button.onclick=closeModal);
+}
+function closeModal(){
+  $('#modalBackdrop').classList.remove('open');
+  $('#modalContent').className='modal';
+  $('#modalContent').innerHTML='';
+}
 function feeModal(){openModal(`<h2>Tambahkan fee driver</h2><p>Pilih bentuk fee. Fee tunai mengurangi pendapatan hari ini. Fee rokok hanya memotong stok.</p><div class="fee-options"><div class="fee-option selected" data-type="cash"><strong>Uang tunai</strong><span>Kurangi pendapatan</span></div><div class="fee-option" data-type="stock"><strong>Rokok</strong><span>Potong stok saja</span></div></div><div id="feeBody"></div><div class="modal-actions"><button class="btn ghost" data-close>Batal</button><button class="btn primary" id="saveFee">Simpan fee</button></div>`);const cur=activeOrder?activeOrder.fee:feeRokok.length?{type:'stock',items:feeRokok}:null;let type=cur?.type||'cash';$('#feeBody').innerHTML=`<div id="feeCash"><label id="feeLabel">Nominal fee</label><input id="feeInput" type="number" value="${fee||20000}" min="0"></div><div id="feeStock"><label>Jumlah bungkus per merek</label><div class="rokok-picker">${rokokPickerHtml(cur?.type==='stock'?cur.items:[])}</div></div>`;const show=()=>{$('.fee-options').querySelectorAll('.fee-option').forEach(x=>x.classList.toggle('selected',x.dataset.type===type));$('#feeCash').classList.toggle('hidden',type!=='cash');$('#feeStock').classList.toggle('hidden',type==='cash')};show();$('.fee-options').querySelectorAll('.fee-option').forEach(o=>o.onclick=()=>{type=o.dataset.type;show()});$('#saveFee').onclick=()=>{const items=type==='stock'?readRokokPicker($('#feeBody')):[];if(type==='stock'&&!items.length)return showToast('Pilih minimal satu merek rokok');const f=type==='cash'?{type,value:+$('#feeInput').value||0}:{type,items};if(activeOrder){activeOrder.fee=f;renderCart();renderOrders();closeModal();return showToast('Fee driver tersimpan ke order')}if(type==='cash'){fee=f.value;feeRokok=[]}else{fee=0;feeRokok=items;showToast(`Fee rokok dicatat: ${feeText(f)}. Stok dipotong saat pembayaran.`)}renderCart();closeModal()}}
 function transferModal(){let lines=[{i:0,qty:10}];openModal(`<div class="req-modal transfer-modal"><h2>Transfer stok antar toko</h2><p>Satu dokumen transfer dapat berisi beberapa barang. Sistem mencegah stok outlet asal menjadi minus.</p><div class="form-grid"><label>Outlet asal<input value="${session?.outlet==='Semua outlet'?'Sekulan RBT 519A':session?.outlet||'Sekulan RBT 519A'}" disabled></label><label>Outlet tujuan<select id="transferOutlet"><option>RM RBT 519A</option><option>Sekulan RBT 519B</option><option>Salatiga 456B</option><option>Bawen 445B</option></select></label></div><table class="stock-table"><thead><tr><th>BARANG</th><th>STOK TERSEDIA</th><th>QTY TRANSFER</th><th></th></tr></thead><tbody id="transferLines"></tbody></table><button class="btn ghost" id="addTransferLine">+ Tambah barang</button><div class="transfer-total" id="transferTotal"></div><label>Catatan pengiriman<textarea id="transferNote" rows="2" placeholder="Opsional"></textarea></label><div class="modal-actions"><button class="btn ghost" data-close>Batal</button><button class="btn primary" id="saveTransfer">Buat transfer multi-barang</button></div></div>`);$('#modalContent').classList.add('wide-modal');const all=[...rawStock,...finishedStock],draw=()=>{$('#transferLines').innerHTML=lines.map((l,n)=>{const x=all[l.i];return `<tr><td><select class="transfer-item" data-n="${n}">${all.map((r,i)=>`<option value="${i}" ${i===l.i?'selected':''}>${r.name}</option>`).join('')}</select></td><td>${x.qty} ${x.unit}</td><td><input class="transfer-qty req-input" data-n="${n}" type="number" min="1" max="${x.qty}" value="${l.qty}"></td><td><button class="text-btn transfer-delete" data-n="${n}">Hapus</button></td></tr>`}).join('');$('#transferTotal').textContent=`${lines.length} jenis barang dalam dokumen transfer`;$$('.transfer-item').forEach(s=>s.onchange=()=>{lines[+s.dataset.n].i=+s.value;lines[+s.dataset.n].qty=1;draw()});$$('.transfer-qty').forEach(i=>i.oninput=()=>lines[+i.dataset.n].qty=+i.value||0);$$('.transfer-delete').forEach(b=>b.onclick=()=>{if(lines.length===1)return showToast('Minimal satu barang');lines.splice(+b.dataset.n,1);draw()})};draw();$('#addTransferLine').onclick=()=>{lines.push({i:Math.min(lines.length,all.length-1),qty:1});draw()};$('#saveTransfer').onclick=()=>{const bad=lines.find(l=>l.qty<1||l.qty>all[l.i].qty),duplicate=new Set(lines.map(l=>l.i)).size!==lines.length;if(bad)return showToast('Periksa qty transfer dan stok tersedia');if(duplicate)return showToast('Barang yang sama tidak boleh dipilih dua kali');const id=`TAT-0920-${String(stockMoves.length+1).padStart(3,'0')}`;lines.forEach(l=>all[l.i].qty-=l.qty);stockMoves.unshift([id,`${lines.length} jenis barang → ${$('#transferOutlet').value}`,'Menunggu penerimaan',nowHM()]);renderInventory();closeModal();showToast(`${id} dibuat dengan ${lines.length} jenis barang`)}}
 function renderReports(){const vals=[5.2,6.7,5.9,7.4,6.4,5.5,5.76],days=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];$('#salesChart').innerHTML=vals.map((v,i)=>`<div class="bar-wrap"><div class="bar" style="height:${v/8*100}%" title="Rp${v} juta"></div><small>${days[i]}</small></div>`).join('');const top=[['Paket Favorit 25K','324 porsi','Rp8.100.000'],['Es teh manis','286 gelas','Rp1.716.000'],['Ayam geprek + nasi','241 porsi','Rp5.302.000'],['Nasi Box 30K','194 box','Rp5.820.000']];$('#topItems').innerHTML=top.map((x,i)=>`<div class="rank-item"><span class="rank-num">${i+1}</span><div><strong>${x[0]}</strong><small>${x[1]}</small></div><strong>${x[2]}</strong></div>`).join('')}
